@@ -51,6 +51,7 @@ const App = () => {
     brandToneOfVoice: [], // NEW: Brand Tone of Voice
     keyMessages: [], // Array for multiple messages
     existingAssets: '', // Text for links/notes, file upload handled separately
+    assetLinks: '', // NEW: For shared asset links
 
     // Section 5: Specific Project Details (dynamic based on projectTypes)
     // A. Make a Logo
@@ -79,7 +80,7 @@ const App = () => {
     // C. Imagine Event Theme & Design Event Journey/Experience
     event: {
       eventName: '',
-      datesLocationDuration: '',
+      datesLocation: '',
       purposeObjective: '',
       estimatedAttendees: '',
       desiredMood: [],
@@ -118,7 +119,20 @@ const App = () => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    // Handle nested states for specific sections
+    // --- Explicitly handle brandToneOfVoice checkbox ---
+    if (name === 'brandToneOfVoice' && type === 'checkbox') {
+      setBriefData(prev => ({
+        ...prev,
+        brandToneOfVoice: checked
+          ? [...prev.brandToneOfVoice, value]
+          : prev.brandToneOfVoice.filter(item => item !== value)
+      }));
+      return; 
+    }
+    // --- END Explicit Handling ---
+
+
+    // Handle nested states for specific sections (e.g., logo.desiredStyle)
     if (name.includes('.')) {
       const [section, subField] = name.split('.');
       if (section === 'audienceDemographics' || section === 'brandPersonality' ||
@@ -152,7 +166,7 @@ const App = () => {
         }
       }
     } else if (type === 'checkbox' && name === 'projectTypes') {
-      // Handle project type checkboxes
+      // Handle project type checkboxes (top-level array)
       setBriefData(prev => ({
         ...prev,
         projectTypes: checked
@@ -160,26 +174,17 @@ const App = () => {
           : prev.projectTypes.filter(type => type !== value)
       }));
     } else if (type === 'checkbox' && (
+      // General multi-select checkboxes (excluding brandToneOfVoice, handled above)
       name === 'desiredStyle' || name === 'channels' || name === 'elementsToInclude' ||
       name === 'primaryUsage' || name === 'visitorExperience' || name === 'technicalRequirements' ||
-      name === 'desiredMood' || name === 'visualStyleMood' || name === 'brandToneOfVoice' // NEW: Brand Tone of Voice
+      name === 'desiredMood' || name === 'visualStyleMood'
       )) {
-        // Handle multi-select checkboxes for specific project details AND brandToneOfVoice
-        const [section, field] = e.target.dataset.field ? e.target.dataset.field.split('.') : [null, name]; // Handle top-level brandToneOfVoice
-        const targetSection = section ? briefData[section] : briefData;
-
+        const fieldName = e.target.dataset.field || name; 
         setBriefData(prev => ({
             ...prev,
-            [section || name]: section
-                ? {
-                    ...targetSection,
-                    [field]: checked
-                        ? [...targetSection[field], value]
-                        : targetSection[field].filter(item => item !== value)
-                }
-                : checked
-                    ? [...targetSection[field], value]
-                    : targetSection[field].filter(item => item !== value)
+            [fieldName]: checked
+                ? [...prev[fieldName], value]
+                : prev[fieldName].filter(item => item !== value)
         }));
     }
     else if (name === 'keyMessages' || name === 'mainCompetitors' || name === 'keyDeadlines' || name === 'keyHighlights' || name === 'keyMoments') {
@@ -192,7 +197,7 @@ const App = () => {
         });
     }
     else {
-      // Handle top-level state changes
+      // Handle top-level string/number inputs (including 'assetLinks' now)
       setBriefData(prev => ({
         ...prev,
         [name]: value
@@ -218,29 +223,18 @@ const App = () => {
 
   // Function to handle form submission to Formspree
   const handleSubmitBrief = async () => {
-    // This Formspree ID is for Canvas testing. Remember to use your ACTUAL ID for deployment!
     const formspreeEndpoint = "https://formspree.io/f/xanorjkl"; 
     
     // In Canvas, we'll simulate the submission and show an alert.
-    // In a real deployed app, this fetch call would send data to Formspree.
-    try {
-      // Simulate network delay for effect
-      await new Promise(resolve => setTimeout(resolve, 500)); 
+    if (formspreeEndpoint.includes("YOUR_FORM_ID")) { 
+      alert("Submission simulated! Remember to replace 'YOUR_FORM_ID' for real deployments.");
+      return; 
+    }
 
-      if (formspreeEndpoint.includes("YOUR_FORM_ID")) {
-        alert("Submission simulated! Remember to replace 'YOUR_FORM_ID' with your actual Formspree ID for real deployments.");
-        console.warn("Formspree endpoint not configured. Please replace 'YOUR_FORM_ID'.");
-        return; 
-      }
-      
-      // Simulate a successful response
+    try {
+      await new Promise(resolve => setTimeout(resolve, 500)); 
       alert("Your creative blueprint has been submitted successfully! (This is a simulation in Canvas.)");
       console.log("Simulated brief data submitted:", briefData);
-      
-      // Optionally, reset the form and go back to the first step in a real app
-      // setBriefData({...initialState}); 
-      // setCurrentStep(0);
-
     } catch (error) {
       console.error("Submission error during simulation:", error);
       alert("An error occurred during submission simulation. (This is a simulation in Canvas.)");
@@ -416,7 +410,7 @@ const App = () => {
           onChange={handleChange}
           rows="2"
           className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-[#ef3a4c]"
-          placeholder="e.g., CEO, Marketing Director, Project Lead"
+          placeholder="e.g., 'CEO, Marketing Director, Project Lead'"
         ></textarea>
       </div>
       <div className="mb-6">
@@ -720,10 +714,18 @@ const App = () => {
           className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-[#ef3a4c]"
           placeholder="Provide links to cloud storage, or describe assets."
         ></textarea>
-        {/* Placeholder for file upload functionality */}
+        {/* The corrected Asset Links text area */}
         <div className="mt-2 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center text-gray-500">
-          Drag & Drop Files Here or Click to Upload (Placeholder)
-          <input type="file" multiple className="hidden" />
+          <label htmlFor="assetLinks" className="block text-gray-700 text-sm font-bold mb-2">Share assets link here:</label>
+          <textarea
+            id="assetLinks"
+            name="assetLinks"
+            value={briefData.assetLinks}
+            onChange={handleChange}
+            rows="3"
+            className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-[#ef3a4c]"
+            placeholder="e.g., Google Drive folder link, Dropbox link, etc."
+          ></textarea>
         </div>
       </div>
     </div>,
@@ -845,12 +847,12 @@ const App = () => {
             </div>
             <div>
               <label htmlFor="booth.datesLocation" className="block text-gray-700 text-sm font-bold mb-2">Dates and Location:</label>
-              <input type="text" id="booth.datesLocation" name="booth.datesLocation" value={briefData.booth.datesLocation} onChange={handleChange} className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-[#ef3a4c]" placeholder="e.g., Nov 1-3, 2025, Riyadh Exhibition Center" />
+              <input type="text" id="booth.datesLocation" name="booth.datesLocation" value={briefData.booth.datesLocation} onChange={handleChange} className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-[#ef3a4c]" placeholder="e.g., 'Nov 1-3, 2025, Riyadh Exhibition Center'" />
             </div>
           </div>
           <div className="mb-4">
             <label htmlFor="booth.sizeDimensions" className="block text-gray-700 text-sm font-bold mb-2">Approximate Booth Size and Dimensions:</label>
-            <input type="text" id="booth.sizeDimensions" name="booth.sizeDimensions" value={briefData.booth.sizeDimensions} onChange={handleChange} className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-[#ef3a4c]" placeholder="e.g., 10x10 ft, 20x20 ft, custom" />
+            <input type="text" id="booth.sizeDimensions" name="booth.sizeDimensions" value={briefData.booth.sizeDimensions} onChange={handleChange} className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-[#ef3a4c]" placeholder="e.g., '10x10 ft, 20x20 ft, custom'" />
           </div>
           <div className="mb-4">
             <label htmlFor="booth.budgetRange" className="block text-gray-700 text-sm font-bold mb-2">Estimated Budget Range for Booth Design & Fabrication:</label>
@@ -949,7 +951,7 @@ const App = () => {
               onChange={handleChange}
               rows="3"
               className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-[#ef3a4c]"
-              placeholder="Provide links or descriptions."
+              placeholder="e.g., 'Provide links or descriptions.'"
             ></textarea>
           </div>
           {/* NEW: Visual Elements to Include/Avoid for Booth */}
@@ -989,7 +991,7 @@ const App = () => {
           </div>
           <div className="mb-4">
             <label htmlFor="event.datesLocationDuration" className="block text-gray-700 text-sm font-bold mb-2">Dates, Location, and Duration:</label>
-            <input type="text" id="event.datesLocationDuration" name="event.datesLocationDuration" value={briefData.event.datesLocationDuration} onChange={handleChange} className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-[#ef3a4c]" placeholder="e.g., Dec 10-12, 2025, King Abdullah Park, 3 days" />
+            <input type="text" id="event.datesLocationDuration" name="event.datesLocationDuration" value={briefData.event.datesLocationDuration} onChange={handleChange} className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-[#ef3a4c]" placeholder="e.g., 'Dec 10-12, 2025, King Abdullah Park, 3 days'" />
           </div>
           <div className="mb-4">
             <label htmlFor="event.purposeObjective" className="block text-gray-700 text-sm font-bold mb-2">Primary Purpose or Objective of this Event:</label>
@@ -1047,7 +1049,12 @@ const App = () => {
                 {briefData.event.keyMoments.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => removeInputField('keyMoments', index)}
+                    onClick={() => {
+                      setBriefData(prev => ({
+                        ...prev,
+                        event: { ...prev.event, keyMoments: prev.event.keyMoments.filter((_, i) => i !== index) }
+                      }));
+                    }}
                     className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-3 rounded-lg focus:outline-none focus:shadow-outline"
                     aria-label="Remove moment"
                   >
@@ -1094,7 +1101,7 @@ const App = () => {
               onChange={handleChange}
               rows="3"
               className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-[#ef3a4c]"
-              placeholder="Provide links or descriptions."
+              placeholder="e.g., 'Provide links or descriptions.'"
             ></textarea>
           </div>
           {/* NEW: Visual Elements to Include/Avoid for Event */}
@@ -1200,7 +1207,7 @@ const App = () => {
               onChange={handleChange}
               rows="3"
               className="shadow appearance-none border rounded-lg w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-[#ef3a4c]"
-              placeholder="Provide links or descriptions."
+              placeholder="e.g., 'Provide links or descriptions.'"
             ></textarea>
           </div>
           {/* NEW: Visual Elements to Include/Avoid for Campaign */}
@@ -1395,7 +1402,7 @@ const App = () => {
                   <p className="font-semibold">{formatKey(key)}:</p>
                   <ul className="list-disc list-inside ml-4">
                     {Object.entries(value).map(([traitKey, traitValue]) => (
-                      <li key={traitKey}>{traitKey.replace(/([A-Z])/g, ' $1').replace('modernTraditional', 'Modern').replace('playfulSerious', 'Playful').replace('luxuriousApproachable', 'Luxurious').replace('edgyTrustworthy', 'Edgy').replace('dynamicCalm', 'Dynamic')}: {traitValue}%</li>
+                      <li key={traitKey}>{traitKey.replace(/([A-Z])/g, ' $1').replace('modernTraditional', 'Modern').replace('playfulSerious', 'Playful').replace('luxuriousApproachable', 'Luxurious').replace('edgyTrustworthy', 'Edgy').replace('dynamicCalm', 'Calm')}: {traitValue}%</li>
                     ))}
                   </ul>
                 </div>
