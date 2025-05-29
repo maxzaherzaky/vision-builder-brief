@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/vision-builder-brief/static/css/main.6a828906.css",
+    "main.js": "/vision-builder-brief/static/js/main.cdcea045.js",
+    "index.html": "/vision-builder-brief/index.html",
+    "main.6a828906.css.map": "/vision-builder-brief/static/css/main.6a828906.css.map",
+    "main.cdcea045.js.map": "/vision-builder-brief/static/js/main.cdcea045.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.6a828906.css",
+    "static/js/main.cdcea045.js"
+  ]
+}
