@@ -1,7 +1,7 @@
 {
   "name": "vision-builder-brief",
   "version": "0.1.0", 
-  "homepage": "https://YOUR_GITHUB_USERNAME.github.io/vision-builder-brief",
+  "homepage": "https://maxzaherzaky.github.io/vision-builder-brief/",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.17.0",
